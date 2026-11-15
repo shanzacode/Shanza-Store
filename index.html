@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shanza's Global Finds | AliExpress Curated Store</title>
+    <title>Shanza's Global Finds | AliExpress Store</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase SDKs -->
@@ -14,9 +14,12 @@
 </head>
 <body>
 
-    <!-- Navbar -->
+    <!-- Professional Navbar -->
     <header class="navbar">
-        <div class="logo">Shanza's <span>Global Finds</span></div>
+        <div class="logo-container" onclick="goHome()">
+            <div class="logo-badge"><i class="fa-solid fa-gem"></i></div>
+            <div class="logo-text">Shanza's <span>Global Finds</span></div>
+        </div>
         
         <div class="search-container">
             <input type="text" id="search-input" placeholder="Search products..." onkeyup="searchProducts()">
@@ -25,30 +28,29 @@
 
         <div class="nav-actions">
             <button id="manage-btn" class="add-toggle-btn hidden-secure" onclick="toggleAdminPanel()">
-                <i class="fa-solid fa-sliders"></i> Manage Store
+                <i class="fa-solid fa-sliders"></i> Admin Dashboard
             </button>
         </div>
     </header>
 
-    <!-- Admin Panel (Secured) -->
+    <!-- Secured Admin Panel (Hidden from Clients) -->
     <section id="admin-panel" class="admin-panel hidden">
         <div class="admin-wrapper">
-            
-            <!-- Box 1: Add New Category -->
+            <!-- Box 1: Add Category -->
             <div class="admin-card">
                 <h2><i class="fa-solid fa-folder-plus"></i> Manage Categories</h2>
                 <form id="category-form" onsubmit="addNewCategory(event)">
                     <div class="form-group">
                         <label>New Category Name:</label>
-                        <input type="text" id="new-cat-name" placeholder="e.g., Jewelry, Nail Paints..." required>
+                        <input type="text" id="new-cat-name" placeholder="e.g., Jewelry, Fashion..." required>
                     </div>
                     <button type="submit" class="submit-btn secondary-btn">Add Category</button>
                 </form>
             </div>
 
-            <!-- Box 2: Add New Product -->
+            <!-- Box 2: Add Product from PC with Multiple Images & Sale Option -->
             <div class="admin-card">
-                <h2><i class="fa-solid fa-boxes-stacked"></i> Add New Product</h2>
+                <h2><i class="fa-solid fa-box-open"></i> Add New Product</h2>
                 <form id="product-form" onsubmit="addNewProduct(event)">
                     <div class="form-group">
                         <label>Product Title:</label>
@@ -59,39 +61,50 @@
                         <select id="p-category" required></select>
                     </div>
                     <div class="form-group">
-                        <label>Price (e.g., Rs. 682 or $5.99):</label>
-                        <input type="text" id="p-price" placeholder="Rs. 682" required>
+                        <label>Price (e.g., Rs. 1,299 or $9.99):</label>
+                        <input type="text" id="p-price" placeholder="Rs. 1,299" required>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="p-sale">
+                        <label for="p-sale">Mark this product <strong>ON SALE</strong> (Shows SALE badge)</label>
                     </div>
                     <div class="form-group">
-                        <label>Product Image (Upload from Device):</label>
-                        <input type="file" id="p-image-file" accept="image/*" required>
+                        <label>Select Images from PC (Choose 1 to 5 images):</label>
+                        <input type="file" id="p-image-files" accept="image/*" multiple required>
+                        <small style="color:#666; font-size:11px;">Ctrl daba kar PC se 3-5 images ek sath select kar sakti hain.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Product Description:</label>
+                        <textarea id="p-desc" rows="2" placeholder="Write product details..." required></textarea>
                     </div>
                     <div class="form-group">
                         <label>AliExpress Affiliate Link:</label>
                         <input type="url" id="p-link" placeholder="https://s.click.aliexpress.com/e/..." required>
                     </div>
-                    <button type="submit" class="submit-btn">Publish Product (Live to All)</button>
+                    <button type="submit" class="submit-btn">Publish Product</button>
                 </form>
             </div>
-
         </div>
     </section>
 
-    <!-- Dynamic Category Buttons -->
+    <!-- Dynamic Category Filter Bar -->
     <nav id="category-bar" class="categories"></nav>
 
-    <!-- Main Content Area -->
-    <main>
+    <!-- Main Dynamic View Area -->
+    <main id="main-content-area">
         <div id="product-grid" class="product-grid"></div>
         <div id="empty-state" class="empty-state">
             <i class="fa-solid fa-bag-shopping"></i>
-            <p>Welcome to my store! Loading products from cloud database...</p>
+            <p>Loading products...</p>
         </div>
     </main>
 
-    <!-- Sticky Footer -->
-    <footer>
-        <p>&copy; 2026 Shanza's Global Finds. All rights reserved. Affiliate Partner with AliExpress.</p>
+    <!-- Professional Footer -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <p>&copy; 2026 <strong>Shanza's Global Finds</strong>. All rights reserved.</p>
+            <p class="footer-sub">Official AliExpress Affiliate Partner | Handpicked Quality Finds</p>
+        </div>
     </footer>
 
     <script src="script.js"></script>
