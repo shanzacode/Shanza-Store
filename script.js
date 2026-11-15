@@ -1,4 +1,3 @@
-// Load saved categories & products from LocalStorage (Starts completely empty of products)
 let categories = JSON.parse(localStorage.getItem('shanza_categories')) || ["Dresses", "Makeup"];
 let products = JSON.parse(localStorage.getItem('shanza_products')) || [];
 let currentCategory = 'all';
@@ -8,14 +7,34 @@ const emptyState = document.getElementById('empty-state');
 const categoryBar = document.getElementById('category-bar');
 const categorySelect = document.getElementById('p-category');
 
+// SECRET ADMIN VERIFICATION: When you want to manage store, click the Logo 3 times quickly!
+let logoClicks = 0;
+document.querySelector('.logo').addEventListener('click', () => {
+    logoClicks++;
+    if (logoClicks === 3) {
+        let pwd = prompt("Enter Admin Secret Password:");
+        if (pwd === "shanza123") { // <-- Yahan apna password rakh sakti hain
+            document.getElementById('manage-btn').classList.remove('hidden-secure');
+            alert("Admin Access Granted!");
+        } else {
+            alert("Wrong Password!");
+        }
+        logoClicks = 0;
+    }
+    setTimeout(() => { logoClicks = 0; }, 2000); // Reset click count after 2 seconds
+});
+
 // Toggle Admin Panel
 function toggleAdminPanel() {
     document.getElementById('admin-panel').classList.toggle('hidden');
 }
 
-// Render Categories in both Filter Bar and Add Product Dropdown
+function verifyAdmin() {
+    toggleAdminPanel();
+}
+
+// Render Categories
 function renderCategories() {
-    // 1. Update Filter Buttons
     categoryBar.innerHTML = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterProducts('all', this)">All Products</button>`;
     
     categories.forEach(cat => {
@@ -23,7 +42,6 @@ function renderCategories() {
         categoryBar.innerHTML += `<button class="cat-btn ${isActive}" onclick="filterProducts('${cat}', this)">${cat}</button>`;
     });
 
-    // 2. Update Dropdown in Add Product Form
     categorySelect.innerHTML = "";
     categories.forEach(cat => {
         categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
@@ -134,6 +152,6 @@ function searchProducts() {
     displayProducts(filtered);
 }
 
-// Initialize on load
+// Initialize
 renderCategories();
 displayProducts(products);
