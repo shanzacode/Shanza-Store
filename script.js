@@ -1,87 +1,98 @@
-// یہاں آپ جتنے چاہیں اپنے پرمنेंट پروڈکٹس خود ایڈ کر سکتی ہیں!
-// یہ لسٹ گিট ہب پر اپ ڈیٹ ہوتے ہی موبائل اور لیپ ٹاپ دونوں پر سب کو نظر آئے گی۔
-let products = [
-    {
-        title: "Elegant Golden Jewelry Set",
-        category: "Jewelry",
-        price: "Rs. 1,299",
-        image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=500&q=80", // یہاں اپنی تصویر کا لنک یا نام دے سکتی ہیں
-        affiliateLink: "https://s.click.aliexpress.com/e/_your_link_here"
-    }
-    // اگر اور پروڈکٹ ڈالنے ہوں تو نیچے کوما (,) لگا کر دوسرا لکھ سکتی ہیں:
-    // {
-    //     title: "Another Product Name",
-    //     category: "Makeup",
-    //     price: "Rs. 850",
-    //     image: "IMAGE_URL_HERE",
-    //     affiliateLink: "ALIEXPRESS_LINK_HERE"
-    // }
-];
+// === GLOBAL STORE DATA (Har device par yehi show hoga) ===
+const defaultCategories = ["Dresses", "Makeup"];
+const defaultProducts = [];
+// =========================================================
 
-let categories = ["Dresses", "Makeup", "Jewelry"];
+let isAdmin = false;
+let categories = JSON.parse(localStorage.getItem('shanza_categories')) || defaultCategories;
+let products = JSON.parse(localStorage.getItem('shanza_products')) || defaultProducts;
 let currentCategory = 'all';
 
 const grid = document.getElementById('product-grid');
 const emptyState = document.getElementById('empty-state');
 const categoryBar = document.getElementById('category-bar');
+const categorySelect = document.getElementById('p-category');
 
 // Secret Admin Trigger: Click Logo 3 times quickly
 let logoClicks = 0;
-const logoEl = document.querySelector('.logo');
-if(logoEl) {
-    logoEl.addEventListener('click', () => {
-        logoClicks++;
-        if (logoClicks === 3) {
-            let pwd = prompt("Enter Admin Secret Password:");
-            if (pwd === "shanza123") {
-                document.getElementById('manage-btn').classList.remove('hidden-secure');
-                alert("Admin Access Granted!");
-            } else {
-                alert("Wrong Password!");
-            }
-            logoClicks = 0;
+document.querySelector('.logo').addEventListener('click', () => {
+    logoClicks++;
+    if (logoClicks === 3) {
+        let pwd = prompt("Enter Admin Secret Password:");
+        if (pwd === "shanza123") {
+            isAdmin = true;
+            document.getElementById('manage-btn').classList.remove('hidden-secure');
+            filterProducts(currentCategory); // Refresh cards to show Delete buttons
+            alert("Admin Mode Unlocked! Ab aap products add ya delete kar sakti hain.");
+        } else {
+            alert("Wrong Password!");
         }
-        setTimeout(() => { logoClicks = 0; }, 2000);
-    });
-}
+        logoClicks = 0;
+    }
+    setTimeout(() => { logoClicks = 0; }, 2000);
+});
 
 function toggleAdminPanel() {
-    const panel = document.getElementById('admin-panel');
-    if(panel) panel.classList.toggle('hidden');
+    document.getElementById('admin-panel').classList.toggle('hidden');
 }
 
-function verifyAdmin() {
-    toggleAdminPanel();
-}
-
-// Render Categories Bar dynamically
+// Render Categories
 function renderCategories() {
-    if(!categoryBar) return;
     categoryBar.innerHTML = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterProducts('all', this)">All Products</button>`;
     
     categories.forEach(cat => {
         const isActive = currentCategory.toLowerCase() === cat.toLowerCase() ? 'active' : '';
         categoryBar.innerHTML += `<button class="cat-btn ${isActive}" onclick="filterProducts('${cat}', this)">${cat}</button>`;
     });
+
+    if (categorySelect) {
+        categorySelect.innerHTML = "";
+        categories.forEach(cat => {
+            categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+        });
+    }
 }
 
-// Display Products on Screen
+// Add New Category
+function addNewCategory(event) {
+    event.preventDefault();
+    const input = document.getElementById('new-cat-name');
+    const newCat = input.value.trim();
+
+    if (newCat && !categories.some(c => c.toLowerCase() === newCat.toLowerCase())) {
+        categories.push(newCat);
+        localStorage.setItem('shanza_categories', JSON.stringify(categories));
+        renderCategories();
+        input.value = "";
+        alert(`Category "${newCat}" added!`);
+    } else {
+        alert("Category already exists or is invalid.");
+    }
+}
+
+// Display Products (Includes Delete button ONLY when Admin is unlocked)
 function displayProducts(productsToDisplay) {
-    if(!grid) return;
     grid.innerHTML = "";
     
     if (productsToDisplay.length === 0) {
-        if(emptyState) emptyState.classList.remove('hidden');
+        emptyState.classList.remove('hidden');
         return;
     } else {
-        if(emptyState) emptyState.classList.add('hidden');
+        emptyState.classList.add('hidden');
     }
 
-    productsToDisplay.forEach(product => {
+    productsToDisplay.forEach((product) => {
+        // Find exact index in main products array for accurate deletion
+        const realIndex = products.indexOf(product);
         const card = document.createElement('div');
         card.classList.add('product-card');
         
+        const deleteBtnHTML = isAdmin 
+            ? `<button class="delete-card-btn" title="Delete Product" onclick="deleteProduct(${realIndex})"><i class="fa-solid fa-trash"></i></button>` 
+            : '';
+
         card.innerHTML = `
+            ${deleteBtnHTML}
             <span class="price-badge">${product.price}</span>
             <img src="${product.image}" alt="${product.title}" class="product-image">
             <div class="product-info">
@@ -92,6 +103,75 @@ function displayProducts(productsToDisplay) {
             </div>
         `;
         grid.appendChild(card);
+    });
+}
+
+// Delete a Product (Admin only)
+function deleteProduct(index) {
+    if (confirm("Kya aap waqai is product ko delete karna chahti hain?")) {
+        products.splice(index, 1);
+        localStorage.setItem('shanza_products', JSON.stringify(products));
+        filterProducts(currentCategory);
+    }
+}
+
+// Compress Image so it saves cleanly and stays lightweight for GitHub
+function addNewProduct(event) {
+    event.preventDefault();
+
+    const title = document.getElementById('p-title').value;
+    const category = document.getElementById('p-category').value;
+    const price = document.getElementById('p-price').value;
+    const imageFile = document.getElementById('p-image-file').files[0];
+    const link = document.getElementById('p-link').value;
+
+    const reader = new FileReader();
+    reader.onload = function(uploadEvent) {
+        const img = new Image();
+        img.onload = function() {
+            // Resize image to max 400px width so file size stays small for all devices
+            const canvas = document.createElement('canvas');
+            const scaleSize = 400 / img.width;
+            canvas.width = 400;
+            canvas.height = img.height * scaleSize;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
+
+            const newProduct = {
+                title: title,
+                category: category,
+                price: price,
+                image: compressedImage,
+                affiliateLink: link
+            };
+
+            products.unshift(newProduct);
+            localStorage.setItem('shanza_products', JSON.stringify(products));
+            
+            filterProducts(currentCategory);
+            document.getElementById('product-form').reset();
+            alert('Product published! Agar aap chahti hain ke ye har mobile aur laptop par nazar aaye to "Copy Code for GitHub" dabayein.');
+        };
+        img.src = uploadEvent.target.result;
+    };
+
+    if (imageFile) {
+        reader.readAsDataURL(imageFile);
+    }
+}
+
+// Copy updated code so user can paste in GitHub script.js to show on ALL devices
+function copyStoreCode() {
+    const codeToCopy = `// === GLOBAL STORE DATA (Har device par yehi show hoga) ===
+const defaultCategories = ${JSON.stringify(categories)};
+const defaultProducts = ${JSON.stringify(products)};
+// =========================================================`;
+
+    navigator.clipboard.writeText(codeToCopy).then(() => {
+        alert("Code Copy ho gaya! Ab GitHub par apni 'script.js' file khol kar upar wali 4 lines ki jagah isay paste karke Commit kar dein. Phir har mobile aur laptop par yehi products dikhenge!");
+    }).catch(() => {
+        alert("Copy failed! Please allow clipboard permissions.");
     });
 }
 
@@ -114,13 +194,11 @@ function filterProducts(category, btnElement = null) {
 
 // Search Products
 function searchProducts() {
-    const searchInput = document.getElementById('search-input');
-    if(!searchInput) return;
-    const query = searchInput.value.toLowerCase();
+    const query = document.getElementById('search-input').value.toLowerCase();
     const filtered = products.filter(p => p.title.toLowerCase().includes(query));
     displayProducts(filtered);
 }
 
-// Initialize on load
+// Initialize
 renderCategories();
 displayProducts(products);
