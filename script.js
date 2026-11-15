@@ -1,79 +1,80 @@
-let categories = JSON.parse(localStorage.getItem('shanza_categories')) || ["Dresses", "Makeup"];
-let products = JSON.parse(localStorage.getItem('shanza_products')) || [];
+// یہاں آپ جتنے چاہیں اپنے پرمنेंट پروڈکٹس خود ایڈ کر سکتی ہیں!
+// یہ لسٹ گিট ہب پر اپ ڈیٹ ہوتے ہی موبائل اور لیپ ٹاپ دونوں پر سب کو نظر آئے گی۔
+let products = [
+    {
+        title: "Elegant Golden Jewelry Set",
+        category: "Jewelry",
+        price: "Rs. 1,299",
+        image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=500&q=80", // یہاں اپنی تصویر کا لنک یا نام دے سکتی ہیں
+        affiliateLink: "https://s.click.aliexpress.com/e/_your_link_here"
+    }
+    // اگر اور پروڈکٹ ڈالنے ہوں تو نیچے کوما (,) لگا کر دوسرا لکھ سکتی ہیں:
+    // {
+    //     title: "Another Product Name",
+    //     category: "Makeup",
+    //     price: "Rs. 850",
+    //     image: "IMAGE_URL_HERE",
+    //     affiliateLink: "ALIEXPRESS_LINK_HERE"
+    // }
+];
+
+let categories = ["Dresses", "Makeup", "Jewelry"];
 let currentCategory = 'all';
 
 const grid = document.getElementById('product-grid');
 const emptyState = document.getElementById('empty-state');
 const categoryBar = document.getElementById('category-bar');
-const categorySelect = document.getElementById('p-category');
 
-// SECRET ADMIN VERIFICATION: When you want to manage store, click the Logo 3 times quickly!
+// Secret Admin Trigger: Click Logo 3 times quickly
 let logoClicks = 0;
-document.querySelector('.logo').addEventListener('click', () => {
-    logoClicks++;
-    if (logoClicks === 3) {
-        let pwd = prompt("Enter Admin Secret Password:");
-        if (pwd === "shanza123") { // <-- Yahan apna password rakh sakti hain
-            document.getElementById('manage-btn').classList.remove('hidden-secure');
-            alert("Admin Access Granted!");
-        } else {
-            alert("Wrong Password!");
+const logoEl = document.querySelector('.logo');
+if(logoEl) {
+    logoEl.addEventListener('click', () => {
+        logoClicks++;
+        if (logoClicks === 3) {
+            let pwd = prompt("Enter Admin Secret Password:");
+            if (pwd === "shanza123") {
+                document.getElementById('manage-btn').classList.remove('hidden-secure');
+                alert("Admin Access Granted!");
+            } else {
+                alert("Wrong Password!");
+            }
+            logoClicks = 0;
         }
-        logoClicks = 0;
-    }
-    setTimeout(() => { logoClicks = 0; }, 2000); // Reset click count after 2 seconds
-});
+        setTimeout(() => { logoClicks = 0; }, 2000);
+    });
+}
 
-// Toggle Admin Panel
 function toggleAdminPanel() {
-    document.getElementById('admin-panel').classList.toggle('hidden');
+    const panel = document.getElementById('admin-panel');
+    if(panel) panel.classList.toggle('hidden');
 }
 
 function verifyAdmin() {
     toggleAdminPanel();
 }
 
-// Render Categories
+// Render Categories Bar dynamically
 function renderCategories() {
+    if(!categoryBar) return;
     categoryBar.innerHTML = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterProducts('all', this)">All Products</button>`;
     
     categories.forEach(cat => {
         const isActive = currentCategory.toLowerCase() === cat.toLowerCase() ? 'active' : '';
         categoryBar.innerHTML += `<button class="cat-btn ${isActive}" onclick="filterProducts('${cat}', this)">${cat}</button>`;
     });
-
-    categorySelect.innerHTML = "";
-    categories.forEach(cat => {
-        categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
-    });
 }
 
-// Add New Custom Category
-function addNewCategory(event) {
-    event.preventDefault();
-    const input = document.getElementById('new-cat-name');
-    const newCat = input.value.trim();
-
-    if (newCat && !categories.some(c => c.toLowerCase() === newCat.toLowerCase())) {
-        categories.push(newCat);
-        localStorage.setItem('shanza_categories', JSON.stringify(categories));
-        renderCategories();
-        input.value = "";
-        alert(`Category "${newCat}" added!`);
-    } else {
-        alert("Category already exists or is invalid.");
-    }
-}
-
-// Display Products
+// Display Products on Screen
 function displayProducts(productsToDisplay) {
+    if(!grid) return;
     grid.innerHTML = "";
     
     if (productsToDisplay.length === 0) {
-        emptyState.classList.remove('hidden');
+        if(emptyState) emptyState.classList.remove('hidden');
         return;
     } else {
-        emptyState.classList.add('hidden');
+        if(emptyState) emptyState.classList.add('hidden');
     }
 
     productsToDisplay.forEach(product => {
@@ -92,40 +93,6 @@ function displayProducts(productsToDisplay) {
         `;
         grid.appendChild(card);
     });
-}
-
-// Add New Product
-function addNewProduct(event) {
-    event.preventDefault();
-
-    const title = document.getElementById('p-title').value;
-    const category = document.getElementById('p-category').value;
-    const price = document.getElementById('p-price').value;
-    const imageFile = document.getElementById('p-image-file').files[0];
-    const link = document.getElementById('p-link').value;
-
-    const reader = new FileReader();
-    reader.onload = function(uploadEvent) {
-        const newProduct = {
-            title: title,
-            category: category,
-            price: price,
-            image: uploadEvent.target.result,
-            affiliateLink: link
-        };
-
-        products.unshift(newProduct);
-        localStorage.setItem('shanza_products', JSON.stringify(products));
-        
-        filterProducts(currentCategory);
-        document.getElementById('product-form').reset();
-        toggleAdminPanel();
-        alert('Product published successfully!');
-    };
-
-    if (imageFile) {
-        reader.readAsDataURL(imageFile);
-    }
 }
 
 // Filter by Category
@@ -147,11 +114,13 @@ function filterProducts(category, btnElement = null) {
 
 // Search Products
 function searchProducts() {
-    const query = document.getElementById('search-input').value.toLowerCase();
+    const searchInput = document.getElementById('search-input');
+    if(!searchInput) return;
+    const query = searchInput.value.toLowerCase();
     const filtered = products.filter(p => p.title.toLowerCase().includes(query));
     displayProducts(filtered);
 }
 
-// Initialize
+// Initialize on load
 renderCategories();
 displayProducts(products);
