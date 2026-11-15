@@ -18,8 +18,8 @@ let products = [];
 let currentCategory = 'all';
 let currentImageIndexes = {};
 
-// Yahan apni live GitHub website ka URL dein taake Pinterest par error na aaye
-const LIVE_SITE_URL = "https://shanzamanzoor.github.io/shanza-store/";
+// Sahi GitHub Live URL
+const LIVE_SITE_URL = "https://shanzacode.github.io/Shanza-Store/";
 
 const mainArea = document.getElementById('main-content-area');
 const categoryBar = document.getElementById('category-bar');
@@ -415,7 +415,7 @@ function deleteProduct(event, id) {
     }
 }
 
-function filterProducts(category, btnElement = null) {
+filterProducts = function(category, btnElement = null) {
     currentCategory = category;
     window.location.hash = "";
     
@@ -430,7 +430,7 @@ function filterProducts(category, btnElement = null) {
         const filtered = products.filter(p => p.category && p.category.toLowerCase() === category.toLowerCase());
         renderHomeView(filtered);
     }
-}
+};
 
 function searchProducts() {
     const query = document.getElementById('search-input').value.toLowerCase();
