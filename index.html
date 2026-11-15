@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shanza's Global Finds | AliExpress Curated Store</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header class="navbar">
+        <div class="logo">Shanza's <span>Global Finds</span></div>
+        
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search products..." onkeyup="searchProducts()">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+
+        <div class="nav-actions">
+            <button class="add-toggle-btn" onclick="toggleAdminPanel()">
+                <i class="fa-solid fa-plus"></i> Manage Store
+            </button>
+        </div>
+    </header>
+
+    <!-- Admin Panel: Add Custom Category & Add Product -->
+    <section id="admin-panel" class="admin-panel hidden">
+        <div class="admin-wrapper">
+            
+            <!-- Box 1: Add New Category -->
+            <div class="admin-card">
+                <h2><i class="fa-solid fa-folder-plus"></i> Add New Category</h2>
+                <form id="category-form" onsubmit="addNewCategory(event)">
+                    <div class="form-group">
+                        <label>Category Name (e.g., Nail Paints, Summer Dresses):</label>
+                        <input type="text" id="new-cat-name" placeholder="Enter category name..." required>
+                    </div>
+                    <button type="submit" class="submit-btn secondary-btn">Add Category</button>
+                </form>
+            </div>
+
+            <!-- Box 2: Add New Product -->
+            <div class="admin-card">
+                <h2><i class="fa-solid fa-boxes-stacked"></i> Add New Product</h2>
+                <form id="product-form" onsubmit="addNewProduct(event)">
+                    <div class="form-group">
+                        <label>Product Title:</label>
+                        <input type="text" id="p-title" placeholder="e.g., Waterproof Eyebrow Gel" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Select Category:</label>
+                        <select id="p-category" required>
+                            <!-- Categories will load here dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Price (e.g., Rs. 682 or $5.99):</label>
+                        <input type="text" id="p-price" placeholder="Rs. 682" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Product Image (Upload from PC):</label>
+                        <input type="file" id="p-image-file" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>AliExpress Affiliate Link:</label>
+                        <input type="url" id="p-link" placeholder="https://s.click.aliexpress.com/e/..." required>
+                    </div>
+                    <button type="submit" class="submit-btn">Publish Product</button>
+                </form>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Dynamic Category Buttons -->
+    <nav id="category-bar" class="categories">
+        <!-- Category buttons will load dynamically -->
+    </nav>
+
+    <!-- Main Content Area (Expands to push footer to bottom) -->
+    <main>
+        <div id="product-grid" class="product-grid">
+            <!-- Your added products will appear here -->
+        </div>
+        <div id="empty-state" class="empty-state">
+            <i class="fa-solid fa-bag-shopping"></i>
+            <p>No products added yet. Click <strong>"+ Manage Store"</strong> above to add categories and products!</p>
+        </div>
+    </main>
+
+    <!-- Sticky Footer -->
+    <footer>
+        <p>&copy; 2026 Shanza's Global Finds. All rights reserved. Affiliate Partner with AliExpress.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
