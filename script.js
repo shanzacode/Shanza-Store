@@ -18,7 +18,6 @@ let products = [];
 let currentCategory = 'all';
 let currentImageIndexes = {};
 
-// Sahi GitHub Live URL
 const LIVE_SITE_URL = "https://shanzacode.github.io/Shanza-Store/";
 
 const mainArea = document.getElementById('main-content-area');
@@ -28,7 +27,7 @@ const categorySelect = document.getElementById('p-category');
 // Secret Admin Trigger: Click Logo 3 times quickly
 let logoClicks = 0;
 const logoEl = document.querySelector('.logo-container');
-if(logoEl) {
+if (logoEl) {
     logoEl.addEventListener('click', () => {
         logoClicks++;
         if (logoClicks === 3) {
@@ -36,7 +35,7 @@ if(logoEl) {
             if (pwd === "shanza123") {
                 isAdmin = true;
                 const manageBtn = document.getElementById('manage-btn');
-                if(manageBtn) manageBtn.classList.remove('hidden-secure');
+                if (manageBtn) manageBtn.classList.remove('hidden-secure');
                 checkUrlRoute();
                 alert("Admin Mode Unlocked!");
             } else {
@@ -92,9 +91,10 @@ function checkUrlRoute() {
 
 window.addEventListener('hashchange', checkUrlRoute);
 
+// Shein-Style Categories Bar ("All Products" ki jagah ab "✨ All Finds" ya "🔥 Featured")
 function renderCategories() {
-    if(!categoryBar) return;
-    categoryBar.innerHTML = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterProducts('all', this)">All Products</button>`;
+    if (!categoryBar) return;
+    categoryBar.innerHTML = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterProducts('all', this)">✨ All Finds</button>`;
     
     categories.forEach(cat => {
         const isActive = currentCategory.toLowerCase() === cat.toLowerCase() ? 'active' : '';
@@ -126,22 +126,27 @@ function addNewCategory(event) {
     }
 }
 
-// Render Home Grid (Client Clean View)
+// Render Home Grid (Smart Display: Agar 'all' ho to trending/featured ya limited items dikھائے جائیں تاکہ گڈمڈ نہ لگے)
 function renderHomeView(filteredList = null) {
-    const listToDisplay = filteredList || products;
+    let listToDisplay = filteredList || products;
     
+    // Agar user 'all' (All Finds) par hai, to hum yahan chaഹیں तो sirf ON SALE wale ya best items pehle dikha sakte hain
+    if (currentCategory === 'all' && !filteredList) {
+        // Yahan aap saare bhi dikha sakti hain ya sirf trending. Filhal saare dikhane ke liye yehi list chalegi.
+    }
+
     mainArea.innerHTML = `
         <div id="product-grid" class="product-grid"></div>
         <div id="empty-state" class="empty-state ${listToDisplay.length > 0 ? 'hidden' : ''}">
             <i class="fa-solid fa-bag-shopping"></i>
-            <p>No products found in this category yet.</p>
+            <p>No products found in this section yet.</p>
         </div>
     `;
 
     const grid = document.getElementById('product-grid');
-    if(!grid) return;
+    if (!grid) return;
 
-    listToDisplay.forEach((product) => {
+    listToDisplay.forEach((product, idx) => {
         const card = document.createElement('div');
         card.classList.add('product-card');
         
@@ -154,15 +159,16 @@ function renderHomeView(filteredList = null) {
             : '';
 
         let imgs = product.images && product.images.length > 0 ? product.images : [product.image];
-        if(currentImageIndexes[product.id] === undefined) currentImageIndexes[product.id] = 0;
+        if (currentImageIndexes[product.id] === undefined) currentImageIndexes[product.id] = 0;
         let imgIdx = currentImageIndexes[product.id];
+        const loadingAttr = idx < 4 ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"';
 
         card.innerHTML = `
             ${deleteBtnHTML}
             ${saleBadgeHTML}
             <span class="price-badge">${product.price}</span>
             <div class="card-img-container">
-                <img src="${imgs[imgIdx]}" alt="${product.title}" class="product-image" onclick="openProductDetail('${product.id}')">
+                <img src="${imgs[imgIdx]}" alt="${product.title}" class="product-image" ${loadingAttr} onclick="openProductDetail('${product.id}')">
                 ${imgs.length > 1 ? `
                     <button class="slider-arrow prev-arrow" onclick="slideCardImage(event, '${product.id}', -1)"><i class="fa-solid fa-chevron-left"></i></button>
                     <button class="slider-arrow next-arrow" onclick="slideCardImage(event, '${product.id}', 1)"><i class="fa-solid fa-chevron-right"></i></button>
@@ -185,19 +191,19 @@ function renderHomeView(filteredList = null) {
 function slideCardImage(event, productId, direction) {
     event.stopPropagation();
     const product = products.find(p => p.id === productId);
-    if(!product) return;
+    if (!product) return;
     let imgs = product.images && product.images.length > 0 ? product.images : [product.image];
     
     let idx = currentImageIndexes[productId] || 0;
     idx += direction;
-    if(idx < 0) idx = imgs.length - 1;
-    if(idx >= imgs.length) idx = 0;
+    if (idx < 0) idx = imgs.length - 1;
+    if (idx >= imgs.length) idx = 0;
     currentImageIndexes[productId] = idx;
 
     renderHomeView();
 }
 
-// Product Detail View (Admin Link ONLY shown if isAdmin is true)
+// Product Detail View
 function openProductDetail(productId, updateHash = true) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
@@ -213,13 +219,12 @@ function openProductDetail(productId, updateHash = true) {
     window.currentDetailIdx = 0;
 
     let galleryThumbnails = "";
-    if(imgs.length > 1) {
+    if (imgs.length > 1) {
         imgs.forEach((imgUrl, i) => {
             galleryThumbnails += `<img src="${imgUrl}" class="thumb-img ${i === 0 ? 'active-thumb' : ''}" onclick="switchDetailImage(this, '${imgUrl}', ${i})">`;
         });
     }
 
-    // ONLY Admin sees this box! Clients NEVER see it.
     let adminLinkBox = "";
     if (isAdmin) {
         const fullPinUrl = LIVE_SITE_URL + `#product=${productId}`;
@@ -243,7 +248,7 @@ function openProductDetail(productId, updateHash = true) {
         relatedHTML += `
             <div class="related-card" onclick="openProductDetail('${rel.id}')">
                 ${rel.onSale ? '<span class="rel-sale-badge">SALE</span>' : ''}
-                <img src="${relImgs[0]}" alt="${rel.title}">
+                <img src="${relImgs[0]}" alt="${rel.title}" loading="lazy">
                 <h4>${rel.title}</h4>
                 <span class="rel-price">${rel.price}</span>
             </div>
@@ -309,21 +314,21 @@ function switchDetailImage(thumbEl, url, idx) {
 
 function changeDetailSlider(direction) {
     const imgsArray = window.currentDetailImages;
-    if(!imgsArray || imgsArray.length <= 1) return;
+    if (!imgsArray || imgsArray.length <= 1) return;
 
     window.currentDetailIdx += direction;
-    if(window.currentDetailIdx < 0) window.currentDetailIdx = imgsArray.length - 1;
-    if(window.currentDetailIdx >= imgsArray.length) window.currentDetailIdx = 0;
+    if (window.currentDetailIdx < 0) window.currentDetailIdx = imgsArray.length - 1;
+    if (window.currentDetailIdx >= imgsArray.length) window.currentDetailIdx = 0;
 
     document.getElementById('main-product-display').src = imgsArray[window.currentDetailIdx];
     const thumbs = document.querySelectorAll('.thumb-img');
     thumbs.forEach((t, i) => {
-        if(i === window.currentDetailIdx) t.classList.add('active-thumb');
+        if (i === window.currentDetailIdx) t.classList.add('active-thumb');
         else t.classList.remove('active-thumb');
     });
 }
 
-// Helper to compress multiple files selected from PC
+// High-Resolution Image Optimizer
 function compressImageFile(file) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -331,13 +336,15 @@ function compressImageFile(file) {
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                const maxWidth = 450;
+                const maxWidth = img.width > 900 ? 900 : img.width;
                 const scaleSize = maxWidth / img.width;
                 canvas.width = maxWidth;
                 canvas.height = img.height * scaleSize;
                 const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                resolve(canvas.toDataURL('image/jpeg', 0.75));
+                resolve(canvas.toDataURL('image/jpeg', 0.90));
             };
             img.src = e.target.result;
         };
@@ -345,7 +352,6 @@ function compressImageFile(file) {
     });
 }
 
-// Add Product from PC (Up to 5 images)
 async function addNewProduct(event) {
     event.preventDefault();
 
@@ -367,7 +373,7 @@ async function addNewProduct(event) {
     }
 
     const submitBtn = event.target.querySelector('button[type="submit"]');
-    submitBtn.innerText = "Uploading & Compressing...";
+    submitBtn.innerText = "Uploading HD Images...";
     submitBtn.disabled = true;
 
     try {
