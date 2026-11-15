@@ -17,9 +17,9 @@
     <!-- Shein-Style Modern Navbar -->
     <header class="navbar">
         <div class="nav-container">
-            <!-- Left: Pure Shopping Bag Logo (3 clicks opens Admin) -->
+            <!-- Logo (3 clicks opens Admin) -->
             <div class="logo-container" onclick="goHome()" title="Home">
-                <svg class="brand-bag-logo" width="38" height="38" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg class="brand-bag-logo" width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="2" y="2" width="44" height="44" rx="12" fill="#111827"/>
                     <path d="M18 17V13.5C18 10.1863 20.6863 7.5 24 7.5C27.3137 7.5 30 10.1863 30 13.5V17" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
                     <path d="M12.5 17H35.5L37.5 36.5C37.7 38.4 36.2 40 34.3 40H13.7C11.8 40 10.3 38.4 10.5 36.5L12.5 17Z" fill="#F44349"/>
@@ -27,13 +27,13 @@
                 </svg>
             </div>
 
-            <!-- Center/Right: Shein-Style Black & White Search Bar -->
+            <!-- Search Bar (Fixed for Mobile & Vivo Screens) -->
             <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search stylish finds, dresses, accessories..." onkeyup="searchProducts()">
+                <input type="text" id="search-input" placeholder="Search products..." onkeyup="searchProducts()">
                 <button class="search-btn-icon"><i class="fa-solid fa-magnifying-glass"></i></button>
             </div>
 
-            <!-- Admin Button (Hidden by default) -->
+            <!-- Admin Button -->
             <div class="nav-actions">
                 <button id="manage-btn" class="add-toggle-btn hidden-secure" onclick="toggleAdminPanel()">
                     <i class="fa-solid fa-sliders"></i> Admin
@@ -42,10 +42,10 @@
         </div>
     </header>
 
-    <!-- Shein-Style Scrolling Categories / Nav Bar (Supports 15-20+ categories smoothly) -->
+    <!-- Horizontal Smooth Scrolling Categories Bar -->
     <nav class="shein-cat-nav">
         <div class="cat-scroll-container" id="category-bar">
-            <!-- Categories will load dynamically here -->
+            <!-- Categories loaded dynamically -->
         </div>
     </nav>
 
@@ -57,7 +57,7 @@
                 <form id="category-form" onsubmit="addNewCategory(event)">
                     <div class="form-group">
                         <label>New Category Name:</label>
-                        <input type="text" id="new-cat-name" placeholder="e.g., Jewelry, Bags, Shoes..." required>
+                        <input type="text" id="new-cat-name" placeholder="e.g., Jewelry, Bags..." required>
                     </div>
                     <button type="submit" class="submit-btn secondary-btn">Add Category</button>
                 </form>
@@ -100,7 +100,7 @@
         </div>
     </section>
 
-    <!-- Main Dynamic View Area -->
+    <!-- Main View Area -->
     <main id="main-content-area">
         <div id="product-grid" class="product-grid"></div>
         <div id="empty-state" class="empty-state">
@@ -109,11 +109,10 @@
         </div>
     </main>
 
-    <!-- Simple, Clean Footer -->
+    <!-- Simple Footer -->
     <footer class="site-footer">
         <div class="footer-container">
             <p>&copy; 2026 Shanza's Global Finds. All rights reserved.</p>
-            <p class="footer-note">Handpicked quality products from global partners.</p>
         </div>
     </footer>
 
