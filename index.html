@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shanza's Global Finds | AliExpress Store</title>
+    <title>Shanza's Global Finds | Affiliate Store</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,41 +14,55 @@
 </head>
 <body>
 
-    <!-- Professional Navbar -->
+    <!-- Shein-Style Modern Navbar -->
     <header class="navbar">
-        <div class="logo-container" onclick="goHome()">
-            <div class="logo-badge"><i class="fa-solid fa-gem"></i></div>
-            <div class="logo-text">Shanza's <span>Global Finds</span></div>
-        </div>
-        
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Search products..." onkeyup="searchProducts()">
-            <i class="fa-solid fa-magnifying-glass"></i>
-        </div>
+        <div class="nav-container">
+            <!-- Left: Pure Shopping Bag Logo (3 clicks opens Admin) -->
+            <div class="logo-container" onclick="goHome()" title="Home">
+                <svg class="brand-bag-logo" width="38" height="38" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="44" height="44" rx="12" fill="#111827"/>
+                    <path d="M18 17V13.5C18 10.1863 20.6863 7.5 24 7.5C27.3137 7.5 30 10.1863 30 13.5V17" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
+                    <path d="M12.5 17H35.5L37.5 36.5C37.7 38.4 36.2 40 34.3 40H13.7C11.8 40 10.3 38.4 10.5 36.5L12.5 17Z" fill="#F44349"/>
+                    <path d="M24 24.5L25.4 28.1L29 29.5L25.4 30.9L24 34.5L22.6 30.9L19 29.5L22.6 28.1L24 24.5Z" fill="#FDE047"/>
+                </svg>
+            </div>
 
-        <div class="nav-actions">
-            <button id="manage-btn" class="add-toggle-btn hidden-secure" onclick="toggleAdminPanel()">
-                <i class="fa-solid fa-sliders"></i> Admin Dashboard
-            </button>
+            <!-- Center/Right: Shein-Style Black & White Search Bar -->
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search stylish finds, dresses, accessories..." onkeyup="searchProducts()">
+                <button class="search-btn-icon"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+
+            <!-- Admin Button (Hidden by default) -->
+            <div class="nav-actions">
+                <button id="manage-btn" class="add-toggle-btn hidden-secure" onclick="toggleAdminPanel()">
+                    <i class="fa-solid fa-sliders"></i> Admin
+                </button>
+            </div>
         </div>
     </header>
 
-    <!-- Secured Admin Panel (Hidden from Clients) -->
+    <!-- Shein-Style Scrolling Categories / Nav Bar (Supports 15-20+ categories smoothly) -->
+    <nav class="shein-cat-nav">
+        <div class="cat-scroll-container" id="category-bar">
+            <!-- Categories will load dynamically here -->
+        </div>
+    </nav>
+
+    <!-- Secured Admin Panel -->
     <section id="admin-panel" class="admin-panel hidden">
         <div class="admin-wrapper">
-            <!-- Box 1: Add Category -->
             <div class="admin-card">
                 <h2><i class="fa-solid fa-folder-plus"></i> Manage Categories</h2>
                 <form id="category-form" onsubmit="addNewCategory(event)">
                     <div class="form-group">
                         <label>New Category Name:</label>
-                        <input type="text" id="new-cat-name" placeholder="e.g., Jewelry, Fashion..." required>
+                        <input type="text" id="new-cat-name" placeholder="e.g., Jewelry, Bags, Shoes..." required>
                     </div>
                     <button type="submit" class="submit-btn secondary-btn">Add Category</button>
                 </form>
             </div>
 
-            <!-- Box 2: Add Product from PC with Multiple Images & Sale Option -->
             <div class="admin-card">
                 <h2><i class="fa-solid fa-box-open"></i> Add New Product</h2>
                 <form id="product-form" onsubmit="addNewProduct(event)">
@@ -61,17 +75,16 @@
                         <select id="p-category" required></select>
                     </div>
                     <div class="form-group">
-                        <label>Price (e.g., Rs. 1,299 or $9.99):</label>
+                        <label>Price:</label>
                         <input type="text" id="p-price" placeholder="Rs. 1,299" required>
                     </div>
                     <div class="form-group checkbox-group">
                         <input type="checkbox" id="p-sale">
-                        <label for="p-sale">Mark this product <strong>ON SALE</strong> (Shows SALE badge)</label>
+                        <label for="p-sale">Mark this product <strong>ON SALE</strong></label>
                     </div>
                     <div class="form-group">
-                        <label>Select Images from PC (Choose 1 to 5 images):</label>
+                        <label>Select Images from PC (1 to 5 images):</label>
                         <input type="file" id="p-image-files" accept="image/*" multiple required>
-                        <small style="color:#666; font-size:11px;">Ctrl daba kar PC se 3-5 images ek sath select kar sakti hain.</small>
                     </div>
                     <div class="form-group">
                         <label>Product Description:</label>
@@ -87,9 +100,6 @@
         </div>
     </section>
 
-    <!-- Dynamic Category Filter Bar -->
-    <nav id="category-bar" class="categories"></nav>
-
     <!-- Main Dynamic View Area -->
     <main id="main-content-area">
         <div id="product-grid" class="product-grid"></div>
@@ -99,11 +109,11 @@
         </div>
     </main>
 
-    <!-- Professional Footer -->
+    <!-- Simple, Clean Footer -->
     <footer class="site-footer">
-        <div class="footer-content">
-            <p>&copy; 2026 <strong>Shanza's Global Finds</strong>. All rights reserved.</p>
-            <p class="footer-sub">Official AliExpress Affiliate Partner | Handpicked Quality Finds</p>
+        <div class="footer-container">
+            <p>&copy; 2026 Shanza's Global Finds. All rights reserved.</p>
+            <p class="footer-note">Handpicked quality products from global partners.</p>
         </div>
     </footer>
 
