@@ -1,11 +1,21 @@
-// === GLOBAL STORE DATA (Har device par yehi show hoga) ===
-const defaultCategories = ["Dresses", "Makeup"];
-const defaultProducts = [];
-// =========================================================
+// === FIREBASE CONFIGURATION ===
+const firebaseConfig = {
+    apiKey: "AIzaSyA9z8IsxGWjCmhBOgvdSVdnQBWsO-6av5o",
+    authDomain: "shanza-store-1a876.firebaseapp.com",
+    projectId: "shanza-store-1a876",
+    storageBucket: "shanza-store-1a876.firebasestorage.app",
+    messagingSenderId: "494631571414",
+    appId: "1:494631571414:web:780e0be4a3e149c947de77",
+    measurementId: "G-F82YHHQB2B"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 let isAdmin = false;
-let categories = JSON.parse(localStorage.getItem('shanza_categories')) || defaultCategories;
-let products = JSON.parse(localStorage.getItem('shanza_products')) || defaultProducts;
+let categories = ["Dresses", "Makeup", "Jewelry"];
+let products = [];
 let currentCategory = 'all';
 
 const grid = document.getElementById('product-grid');
@@ -15,29 +25,55 @@ const categorySelect = document.getElementById('p-category');
 
 // Secret Admin Trigger: Click Logo 3 times quickly
 let logoClicks = 0;
-document.querySelector('.logo').addEventListener('click', () => {
-    logoClicks++;
-    if (logoClicks === 3) {
-        let pwd = prompt("Enter Admin Secret Password:");
-        if (pwd === "shanza123") {
-            isAdmin = true;
-            document.getElementById('manage-btn').classList.remove('hidden-secure');
-            filterProducts(currentCategory); // Refresh cards to show Delete buttons
-            alert("Admin Mode Unlocked! Ab aap products add ya delete kar sakti hain.");
-        } else {
-            alert("Wrong Password!");
+const logoEl = document.querySelector('.logo');
+if(logoEl) {
+    logoEl.addEventListener('click', () => {
+        logoClicks++;
+        if (logoClicks === 3) {
+            let pwd = prompt("Enter Admin Secret Password:");
+            if (pwd === "shanza123") {
+                isAdmin = true;
+                document.getElementById('manage-btn').classList.remove('hidden-secure');
+                renderProductsUI();
+                alert("Admin Mode Unlocked! Ab aap products add ya delete kar sakti hain.");
+            } else {
+                alert("Wrong Password!");
+            }
+            logoClicks = 0;
         }
-        logoClicks = 0;
-    }
-    setTimeout(() => { logoClicks = 0; }, 2000);
-});
+        setTimeout(() => { logoClicks = 0; }, 2000);
+    });
+}
 
 function toggleAdminPanel() {
     document.getElementById('admin-panel').classList.toggle('hidden');
 }
 
+// Fetch Categories and Products from Firestore Real-time
+function loadStoreData() {
+    // Load Categories
+    db.collection("settings").doc("categories").get().then((doc) => {
+        if (doc.exists && doc.data().list) {
+            categories = doc.data().list;
+        }
+        renderCategories();
+    }).catch(() => {
+        renderCategories();
+    });
+
+    // Load Products in Real-time
+    db.collection("products").onSnapshot((snapshot) => {
+        products = [];
+        snapshot.forEach((doc) => {
+            products.push({ id: doc.id, ...doc.data() });
+        });
+        filterProducts(currentCategory);
+    });
+}
+
 // Render Categories
 function renderCategories() {
+    if(!categoryBar) return;
     categoryBar.innerHTML = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterProducts('all', this)">All Products</button>`;
     
     categories.forEach(cat => {
@@ -61,34 +97,38 @@ function addNewCategory(event) {
 
     if (newCat && !categories.some(c => c.toLowerCase() === newCat.toLowerCase())) {
         categories.push(newCat);
-        localStorage.setItem('shanza_categories', JSON.stringify(categories));
-        renderCategories();
-        input.value = "";
-        alert(`Category "${newCat}" added!`);
+        db.collection("settings").doc("categories").set({ list: categories }).then(() => {
+            renderCategories();
+            input.value = "";
+            alert(`Category "${newCat}" added successfully!`);
+        });
     } else {
         alert("Category already exists or is invalid.");
     }
 }
 
-// Display Products (Includes Delete button ONLY when Admin is unlocked)
+// Display Products on Screen
+function renderProductsUI() {
+    filterProducts(currentCategory);
+}
+
 function displayProducts(productsToDisplay) {
+    if(!grid) return;
     grid.innerHTML = "";
     
     if (productsToDisplay.length === 0) {
-        emptyState.classList.remove('hidden');
+        if(emptyState) emptyState.classList.remove('hidden');
         return;
     } else {
-        emptyState.classList.add('hidden');
+        if(emptyState) emptyState.classList.add('hidden');
     }
 
     productsToDisplay.forEach((product) => {
-        // Find exact index in main products array for accurate deletion
-        const realIndex = products.indexOf(product);
         const card = document.createElement('div');
         card.classList.add('product-card');
         
         const deleteBtnHTML = isAdmin 
-            ? `<button class="delete-card-btn" title="Delete Product" onclick="deleteProduct(${realIndex})"><i class="fa-solid fa-trash"></i></button>` 
+            ? `<button class="delete-card-btn" title="Delete Product" onclick="deleteProduct('${product.id}')"><i class="fa-solid fa-trash"></i></button>` 
             : '';
 
         card.innerHTML = `
@@ -106,16 +146,18 @@ function displayProducts(productsToDisplay) {
     });
 }
 
-// Delete a Product (Admin only)
-function deleteProduct(index) {
+// Delete a Product from Database (Admin only)
+function deleteProduct(id) {
     if (confirm("Kya aap waqai is product ko delete karna chahti hain?")) {
-        products.splice(index, 1);
-        localStorage.setItem('shanza_products', JSON.stringify(products));
-        filterProducts(currentCategory);
+        db.collection("products").doc(id).delete().then(() => {
+            alert("Product deleted successfully!");
+        }).catch((error) => {
+            alert("Error deleting product: " + error.message);
+        });
     }
 }
 
-// Compress Image so it saves cleanly and stays lightweight for GitHub
+// Add New Product & Save to Cloud Database
 function addNewProduct(event) {
     event.preventDefault();
 
@@ -129,7 +171,6 @@ function addNewProduct(event) {
     reader.onload = function(uploadEvent) {
         const img = new Image();
         img.onload = function() {
-            // Resize image to max 400px width so file size stays small for all devices
             const canvas = document.createElement('canvas');
             const scaleSize = 400 / img.width;
             canvas.width = 400;
@@ -143,15 +184,16 @@ function addNewProduct(event) {
                 category: category,
                 price: price,
                 image: compressedImage,
-                affiliateLink: link
+                affiliateLink: link,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            products.unshift(newProduct);
-            localStorage.setItem('shanza_products', JSON.stringify(products));
-            
-            filterProducts(currentCategory);
-            document.getElementById('product-form').reset();
-            alert('Product published! Agar aap chahti hain ke ye har mobile aur laptop par nazar aaye to "Copy Code for GitHub" dabayein.');
+            db.collection("products").add(newProduct).then(() => {
+                document.getElementById('product-form').reset();
+                alert('Product published successfully! Ab ye har mobile aur laptop par live nazar aa raha hai.');
+            }).catch((error) => {
+                alert("Error adding product: " + error.message);
+            });
         };
         img.src = uploadEvent.target.result;
     };
@@ -159,20 +201,6 @@ function addNewProduct(event) {
     if (imageFile) {
         reader.readAsDataURL(imageFile);
     }
-}
-
-// Copy updated code so user can paste in GitHub script.js to show on ALL devices
-function copyStoreCode() {
-    const codeToCopy = `// === GLOBAL STORE DATA (Har device par yehi show hoga) ===
-const defaultCategories = ${JSON.stringify(categories)};
-const defaultProducts = ${JSON.stringify(products)};
-// =========================================================`;
-
-    navigator.clipboard.writeText(codeToCopy).then(() => {
-        alert("Code Copy ho gaya! Ab GitHub par apni 'script.js' file khol kar upar wali 4 lines ki jagah isay paste karke Commit kar dein. Phir har mobile aur laptop par yehi products dikhenge!");
-    }).catch(() => {
-        alert("Copy failed! Please allow clipboard permissions.");
-    });
 }
 
 // Filter by Category
@@ -187,7 +215,7 @@ function filterProducts(category, btnElement = null) {
     if (category === 'all') {
         displayProducts(products);
     } else {
-        const filtered = products.filter(p => p.category.toLowerCase() === category.toLowerCase());
+        const filtered = products.filter(p => p.category && p.category.toLowerCase() === category.toLowerCase());
         displayProducts(filtered);
     }
 }
@@ -195,10 +223,9 @@ function filterProducts(category, btnElement = null) {
 // Search Products
 function searchProducts() {
     const query = document.getElementById('search-input').value.toLowerCase();
-    const filtered = products.filter(p => p.title.toLowerCase().includes(query));
+    const filtered = products.filter(p => p.title && p.title.toLowerCase().includes(query));
     displayProducts(filtered);
 }
 
-// Initialize
-renderCategories();
-displayProducts(products);
+// Initialize Store on load
+loadStoreData();
