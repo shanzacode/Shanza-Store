@@ -20,13 +20,14 @@
         </div>
 
         <div class="nav-actions">
-            <button class="add-toggle-btn" onclick="toggleAdminPanel()">
-                <i class="fa-solid fa-plus"></i> Manage Store
+            <!-- Hidden Secret Trigger: Only appears if you click the logo 3 times or use password -->
+            <button id="manage-btn" class="add-toggle-btn hidden-secure" onclick="verifyAdmin()">
+                <i class="fa-solid.fa-lock-open"></i> Manage Store
             </button>
         </div>
     </header>
 
-    <!-- Admin Panel: Add Custom Category & Add Product -->
+    <!-- Admin Panel (Secured) -->
     <section id="admin-panel" class="admin-panel hidden">
         <div class="admin-wrapper">
             
@@ -35,8 +36,8 @@
                 <h2><i class="fa-solid fa-folder-plus"></i> Add New Category</h2>
                 <form id="category-form" onsubmit="addNewCategory(event)">
                     <div class="form-group">
-                        <label>Category Name (e.g., Nail Paints, Summer Dresses):</label>
-                        <input type="text" id="new-cat-name" placeholder="Enter category name..." required>
+                        <label>Category Name:</label>
+                        <input type="text" id="new-cat-name" placeholder="Enter category..." required>
                     </div>
                     <button type="submit" class="submit-btn secondary-btn">Add Category</button>
                 </form>
@@ -48,20 +49,18 @@
                 <form id="product-form" onsubmit="addNewProduct(event)">
                     <div class="form-group">
                         <label>Product Title:</label>
-                        <input type="text" id="p-title" placeholder="e.g., Waterproof Eyebrow Gel" required>
+                        <input type="text" id="p-title" placeholder="Product name..." required>
                     </div>
                     <div class="form-group">
                         <label>Select Category:</label>
-                        <select id="p-category" required>
-                            <!-- Categories will load here dynamically -->
-                        </select>
+                        <select id="p-category" required></select>
                     </div>
                     <div class="form-group">
-                        <label>Price (e.g., Rs. 682 or $5.99):</label>
+                        <label>Price:</label>
                         <input type="text" id="p-price" placeholder="Rs. 682" required>
                     </div>
                     <div class="form-group">
-                        <label>Product Image (Upload from PC):</label>
+                        <label>Product Image:</label>
                         <input type="file" id="p-image-file" accept="image/*" required>
                     </div>
                     <div class="form-group">
@@ -76,18 +75,14 @@
     </section>
 
     <!-- Dynamic Category Buttons -->
-    <nav id="category-bar" class="categories">
-        <!-- Category buttons will load dynamically -->
-    </nav>
+    <nav id="category-bar" class="categories"></nav>
 
-    <!-- Main Content Area (Expands to push footer to bottom) -->
+    <!-- Main Content Area -->
     <main>
-        <div id="product-grid" class="product-grid">
-            <!-- Your added products will appear here -->
-        </div>
+        <div id="product-grid" class="product-grid"></div>
         <div id="empty-state" class="empty-state">
             <i class="fa-solid fa-bag-shopping"></i>
-            <p>No products added yet. Click <strong>"+ Manage Store"</strong> above to add categories and products!</p>
+            <p>Welcome to my store! Browse categories above.</p>
         </div>
     </main>
 
