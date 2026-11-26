@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shanza's Global Finds | Affiliate Store</title>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -103,9 +105,9 @@
     <!-- Main View Area -->
     <main id="main-content-area">
         <div id="product-grid" class="product-grid"></div>
-        <div id="empty-state" class="empty-state">
+        <div id="empty-state" class="empty-state hidden">
             <i class="fa-solid fa-bag-shopping"></i>
-            <p>Loading products...</p>
+            <p>No products found in this section yet.</p>
         </div>
     </main>
 
@@ -116,6 +118,6 @@
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
