@@ -12,11 +12,17 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+
+const CACHE_PRODUCTS_KEY = "shanza_store_products_cache_v1";
+const CACHE_CATEGORIES_KEY = "shanza_store_categories_cache_v1";
+
 let isAdmin = false;
 let categories = ["Dresses", "Makeup", "Jewelry"];
 let products = [];
 let currentCategory = 'all';
 let currentImageIndexes = {};
+let activeDetailId = null;
 
 const LIVE_SITE_URL = "https://shanzacode.github.io/Shanza-Store/";
 
@@ -24,7 +30,6 @@ const mainArea = document.getElementById('main-content-area');
 const categoryBar = document.getElementById('category-bar');
 const categorySelect = document.getElementById('p-category');
 
-// Secret Admin Trigger: Click Logo 3 times quickly
 let logoClicks = 0;
 const logoEl = document.querySelector('.logo-container');
 if (logoEl) {
@@ -52,46 +57,118 @@ function toggleAdminPanel() {
 }
 
 function goHome() {
-    window.location.hash = "";
+    activeDetailId = null;
+    history.replaceState(null, "", window.location.pathname + window.location.search);
     renderHomeView();
 }
 
-// Load Data from Firestore
-function loadStoreData() {
-    db.collection("settings").doc("categories").get().then((doc) => {
-        if (doc.exists && doc.data().list) {
-            categories = doc.data().list;
-        }
-        renderCategories();
-    }).catch(() => {
-        renderCategories();
-    });
+function saveCache(key, data) {
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {}
+}
 
+function readCache(key) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+// Extract product ID even when Pinterest adds ?utm_source=... before #product=ID
+function getProductIdFromUrl() {
+    const fullUrl = window.location.href;
+    const match = fullUrl.match(/#product=([^&?#]+)/);
+    return match ? decodeURIComponent(match[1]).trim() : null;
+}
+
+function loadStoreData() {
+    const cachedCats = readCache(CACHE_CATEGORIES_KEY);
+    if (Array.isArray(cachedCats) && cachedCats.length > 0) {
+        categories = cachedCats;
+    }
+    renderCategories();
+
+    const cachedProducts = readCache(CACHE_PRODUCTS_KEY);
+    if (Array.isArray(cachedProducts) && cachedProducts.length > 0) {
+        products = cachedProducts;
+    }
+
+    const requestedProductId = getProductIdFromUrl();
+
+    // 1. If opened via a direct product link, try opening immediately from cache or single-doc fetch
+    if (requestedProductId) {
+        activeDetailId = requestedProductId;
+        const cachedMatch = products.find(p => p.id === requestedProductId);
+        if (cachedMatch) {
+            openProductDetail(requestedProductId, false);
+        } else {
+            db.collection("products").doc(requestedProductId).get().then((doc) => {
+                if (doc.exists) {
+                    const singleProd = { id: doc.id, ...doc.data() };
+                    if (!products.some(p => p.id === singleProd.id)) {
+                        products.unshift(singleProd);
+                    }
+                    if (activeDetailId === singleProd.id) {
+                        openProductDetail(singleProd.id, false);
+                    }
+                } else if (products.length > 0) {
+                    renderHomeView();
+                } else {
+                    renderHomeView([]);
+                }
+            }).catch(() => {
+                if (products.length > 0) {
+                    renderHomeView();
+                } else {
+                    renderHomeView([]);
+                }
+            });
+        }
+    } else if (products.length > 0) {
+        renderHomeView();
+    } else {
+        renderHomeView([]);
+    }
+
+    // 2. Background sync for categories
+    db.collection("settings").doc("categories").get().then((doc) => {
+        if (doc.exists && Array.isArray(doc.data().list)) {
+            categories = doc.data().list;
+            saveCache(CACHE_CATEGORIES_KEY, categories);
+            renderCategories();
+        }
+    }).catch(() => {});
+
+    // 3. Background real-time sync for all products
     db.collection("products").onSnapshot((snapshot) => {
-        products = [];
+        const updatedProducts = [];
         snapshot.forEach((doc) => {
-            products.push({ id: doc.id, ...doc.data() });
+            updatedProducts.push({ id: doc.id, ...doc.data() });
         });
+        products = updatedProducts;
+        saveCache(CACHE_PRODUCTS_KEY, products);
         checkUrlRoute();
     });
 }
 
-// Direct URL Route (#product=ID)
 function checkUrlRoute() {
-    const hash = window.location.hash;
-    if (hash.startsWith('#product=')) {
-        const productId = hash.replace('#product=', '');
-        if (products.length > 0) {
+    const productId = getProductIdFromUrl();
+    if (productId) {
+        activeDetailId = productId;
+        if (products.some(p => p.id === productId)) {
             openProductDetail(productId, false);
         }
-    } else {
-        renderHomeView();
+        return;
     }
+    activeDetailId = null;
+    renderHomeView();
 }
 
 window.addEventListener('hashchange', checkUrlRoute);
 
-// Shein-Style Categories Bar ("All Products" ki jagah ab "✨ All Finds" ya "🔥 Featured")
 function renderCategories() {
     if (!categoryBar) return;
     categoryBar.innerHTML = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterProducts('all', this)">✨ All Finds</button>`;
@@ -116,8 +193,9 @@ function addNewCategory(event) {
 
     if (newCat && !categories.some(c => c.toLowerCase() === newCat.toLowerCase())) {
         categories.push(newCat);
+        saveCache(CACHE_CATEGORIES_KEY, categories);
+        renderCategories();
         db.collection("settings").doc("categories").set({ list: categories }).then(() => {
-            renderCategories();
             input.value = "";
             alert(`Category "${newCat}" added!`);
         });
@@ -126,14 +204,8 @@ function addNewCategory(event) {
     }
 }
 
-// Render Home Grid (Smart Display: Agar 'all' ho to trending/featured ya limited items dikھائے جائیں تاکہ گڈمڈ نہ لگے)
 function renderHomeView(filteredList = null) {
     let listToDisplay = filteredList || products;
-    
-    // Agar user 'all' (All Finds) par hai, to hum yahan chaഹیں तो sirf ON SALE wale ya best items pehle dikha sakte hain
-    if (currentCategory === 'all' && !filteredList) {
-        // Yahan aap saare bhi dikha sakti hain ya sirf trending. Filhal saare dikhane ke liye yehi list chalegi.
-    }
 
     mainArea.innerHTML = `
         <div id="product-grid" class="product-grid"></div>
@@ -161,7 +233,7 @@ function renderHomeView(filteredList = null) {
         let imgs = product.images && product.images.length > 0 ? product.images : [product.image];
         if (currentImageIndexes[product.id] === undefined) currentImageIndexes[product.id] = 0;
         let imgIdx = currentImageIndexes[product.id];
-        const loadingAttr = idx < 4 ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"';
+        const loadingAttr = idx < 4 ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"';
 
         card.innerHTML = `
             ${deleteBtnHTML}
@@ -200,19 +272,25 @@ function slideCardImage(event, productId, direction) {
     if (idx >= imgs.length) idx = 0;
     currentImageIndexes[productId] = idx;
 
-    renderHomeView();
+    const imgEl = event.currentTarget.closest('.card-img-container')?.querySelector('.product-image');
+    if (imgEl) {
+        imgEl.src = imgs[idx];
+    } else {
+        renderHomeView();
+    }
 }
 
-// Product Detail View
 function openProductDetail(productId, updateHash = true) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
+
+    activeDetailId = productId;
 
     if (updateHash) {
         window.location.hash = `product=${productId}`;
     }
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
 
     let imgs = product.images && product.images.length > 0 ? product.images : [product.image];
     window.currentDetailImages = imgs;
@@ -241,14 +319,14 @@ function openProductDetail(productId, updateHash = true) {
 
     const saleTagDetail = product.onSale ? `<span class="sale-tag-detail">ON SALE</span>` : '';
 
-    const relatedProducts = products.filter(p => p.id !== productId).slice(0, 4);
+    const relatedProducts = products.filter(p => p.id !== productId).slice(0, 2);
     let relatedHTML = "";
     relatedProducts.forEach(rel => {
         let relImgs = rel.images && rel.images.length > 0 ? rel.images : [rel.image];
         relatedHTML += `
             <div class="related-card" onclick="openProductDetail('${rel.id}')">
                 ${rel.onSale ? '<span class="rel-sale-badge">SALE</span>' : ''}
-                <img src="${relImgs[0]}" alt="${rel.title}" loading="lazy">
+                <img src="${relImgs[0]}" alt="${rel.title}" loading="lazy" decoding="async">
                 <h4>${rel.title}</h4>
                 <span class="rel-price">${rel.price}</span>
             </div>
@@ -265,7 +343,7 @@ function openProductDetail(productId, updateHash = true) {
                 <div class="image-gallery-section">
                     <div class="main-image-wrapper">
                         ${imgs.length > 1 ? `<button class="detail-arrow detail-prev" onclick="changeDetailSlider(-1)"><i class="fa-solid fa-chevron-left"></i></button>` : ''}
-                        <img id="main-product-display" src="${imgs[0]}" alt="${product.title}">
+                        <img id="main-product-display" src="${imgs[0]}" alt="${product.title}" fetchpriority="high" decoding="async">
                         ${imgs.length > 1 ? `<button class="detail-arrow detail-next" onclick="changeDetailSlider(1)"><i class="fa-solid fa-chevron-right"></i></button>` : ''}
                     </div>
                     <div class="thumbnail-row">
@@ -328,7 +406,6 @@ function changeDetailSlider(direction) {
     });
 }
 
-// High-Resolution Image Optimizer
 function compressImageFile(file) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -336,15 +413,15 @@ function compressImageFile(file) {
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                const maxWidth = img.width > 900 ? 900 : img.width;
+                const maxWidth = img.width > 500 ? 500 : img.width;
                 const scaleSize = maxWidth / img.width;
                 canvas.width = maxWidth;
-                canvas.height = img.height * scaleSize;
+                canvas.height = Math.round(img.height * scaleSize);
                 const ctx = canvas.getContext('2d');
                 ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
+                ctx.imageSmoothingQuality = 'medium';
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                resolve(canvas.toDataURL('image/jpeg', 0.90));
+                resolve(canvas.toDataURL('image/jpeg', 0.65));
             };
             img.src = e.target.result;
         };
@@ -373,15 +450,13 @@ async function addNewProduct(event) {
     }
 
     const submitBtn = event.target.querySelector('button[type="submit"]');
-    submitBtn.innerText = "Uploading HD Images...";
+    submitBtn.innerText = "Publishing...";
     submitBtn.disabled = true;
 
     try {
-        const compressedImages = [];
-        for (let i = 0; i < filesInput.length; i++) {
-            const base64 = await compressImageFile(filesInput[i]);
-            compressedImages.push(base64);
-        }
+        const compressedImages = await Promise.all(
+            Array.from(filesInput).map(file => compressImageFile(file))
+        );
 
         const newProduct = {
             title: title,
@@ -397,11 +472,14 @@ async function addNewProduct(event) {
 
         const docRef = await db.collection("products").add(newProduct);
         document.getElementById('product-form').reset();
-        
+
+        const localProduct = { ...newProduct, id: docRef.id };
+        products.unshift(localProduct);
+        saveCache(CACHE_PRODUCTS_KEY, products);
+        renderHomeView();
+
         const generatedPinLink = LIVE_SITE_URL + `#product=${docRef.id}`;
         prompt("Product Published! Yeh aapka valid Pinterest Link hai (Isko copy kar ke Pinterest par laga dein):", generatedPinLink);
-        
-        renderHomeView();
     } catch (error) {
         alert("Error: " + error.message);
     } finally {
@@ -414,6 +492,9 @@ function deleteProduct(event, id) {
     event.stopPropagation();
     if (confirm("Are you sure you want to delete this product?")) {
         db.collection("products").doc(id).delete().then(() => {
+            products = products.filter(p => p.id !== id);
+            saveCache(CACHE_PRODUCTS_KEY, products);
+            renderHomeView();
             alert("Product deleted!");
         }).catch((error) => {
             alert("Error: " + error.message);
@@ -423,7 +504,8 @@ function deleteProduct(event, id) {
 
 filterProducts = function(category, btnElement = null) {
     currentCategory = category;
-    window.location.hash = "";
+    activeDetailId = null;
+    history.replaceState(null, "", window.location.pathname + window.location.search);
     
     if (btnElement) {
         document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
