@@ -14,8 +14,8 @@ const db = firebase.firestore();
 
 db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
 
-const CACHE_PRODUCTS_KEY = "shanza_store_products_cache_v1";
-const CACHE_CATEGORIES_KEY = "shanza_store_categories_cache_v1";
+const CACHE_PRODUCTS_KEY = "veloura_store_products_cache_v1";
+const CACHE_CATEGORIES_KEY = "veloura_store_categories_cache_v1";
 
 let isAdmin = false;
 let categories = ["Dresses", "Makeup", "Jewelry"];
