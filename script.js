@@ -773,10 +773,10 @@ function searchProducts() {
 
 // Footer Info Modal Pages
 const INFO_PAGES = {
-    about: {
-        title: "About Shanza's Global Finds",
-        body: "<p>Shanza's Global Finds is a curated online storefront highlighting practical, stylish, and trending everyday products across organized collections.</p><p>Each item is selected to help shoppers discover useful finds quickly with clear details and direct access to official listings.</p>"
-    },
+   about: {
+    title: "About Veloura",
+    body: "<p>Veloura is a curated online storefront highlighting practical, stylish, and trending everyday products across organized collections.</p><p>Each item is selected to help shoppers discover useful finds quickly with clear details and direct access to official listings.</p>"
+},
     disclosure: {
         title: "Affiliate Disclosure",
         body: "<p>This storefront participates in affiliate programs, including AliExpress affiliate links. When you click a product link and complete a purchase on a partner site, a small commission may be earned at no extra cost to you.</p>"
