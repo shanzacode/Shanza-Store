@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shanza's Global Finds | Affiliate Store</title>
+    <title>Shanza's Global Finds | Curated Online Store</title>
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="stylesheet" href="style.css">
@@ -16,27 +16,40 @@
 </head>
 <body>
 
-    <!-- Shein-Style Modern Navbar -->
+    <!-- Aesthetic Store Navbar -->
     <header class="navbar">
         <div class="nav-container">
             <!-- Logo (3 clicks opens Admin) -->
-            <div class="logo-container" onclick="goHome()" title="Home">
+            <div class="logo-container" onclick="goHome()" title="Shanza's Global Finds - Home">
                 <svg class="brand-bag-logo" width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="2" y="2" width="44" height="44" rx="12" fill="#111827"/>
                     <path d="M18 17V13.5C18 10.1863 20.6863 7.5 24 7.5C27.3137 7.5 30 10.1863 30 13.5V17" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
                     <path d="M12.5 17H35.5L37.5 36.5C37.7 38.4 36.2 40 34.3 40H13.7C11.8 40 10.3 38.4 10.5 36.5L12.5 17Z" fill="#F44349"/>
                     <path d="M24 24.5L25.4 28.1L29 29.5L25.4 30.9L24 34.5L22.6 30.9L19 29.5L22.6 28.1L24 24.5Z" fill="#FDE047"/>
                 </svg>
+                <span class="brand-wordmark">SHANZA<span>.</span></span>
             </div>
 
-            <!-- Search Bar (Fixed for Mobile & Vivo Screens) -->
-            <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search products..." onkeyup="searchProducts()">
-                <button class="search-btn-icon"><i class="fa-solid fa-magnifying-glass"></i></button>
-            </div>
+            <!-- Minimal Nav Links -->
+            <nav class="main-nav-links" aria-label="Primary Navigation">
+                <a href="#store-top" onclick="goHome(); return false;" class="nav-link-item">Home</a>
+                <a href="#collections-section" onclick="scrollToSection('collections-section'); return false;" class="nav-link-item">Collections</a>
+                <a href="#products-section" onclick="scrollToSection('products-section'); return false;" class="nav-link-item">Shop</a>
+            </nav>
 
-            <!-- Admin Button -->
+            <!-- Search Icon + Expandable Bar + Admin -->
             <div class="nav-actions">
+                <div id="search-box" class="search-expand-box" aria-expanded="false">
+                    <input type="text" id="search-input" placeholder="Search products..." onkeyup="searchProducts()">
+                    <button type="button" class="search-clear-btn hidden" id="search-clear-btn" onclick="clearSearch()" title="Clear Search">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <button type="button" id="search-toggle-btn" class="icon-circle-btn" onclick="toggleSearchBar()" title="Search Store" aria-label="Toggle Search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+
                 <button id="manage-btn" class="add-toggle-btn hidden-secure" onclick="toggleAdminPanel()">
                     <i class="fa-solid fa-sliders"></i> Admin
                 </button>
@@ -45,7 +58,7 @@
     </header>
 
     <!-- Horizontal Smooth Scrolling Categories Bar -->
-    <nav class="shein-cat-nav">
+    <nav class="shein-cat-nav" aria-label="Product Categories">
         <div class="cat-scroll-container" id="category-bar">
             <!-- Categories loaded dynamically -->
         </div>
@@ -59,15 +72,17 @@
                 <form id="category-form" onsubmit="addNewCategory(event)">
                     <div class="form-group">
                         <label>New Category Name:</label>
-                        <input type="text" id="new-cat-name" placeholder="e.g., Jewelry, Bags..." required>
+                        <input type="text" id="new-cat-name" placeholder="e.g., Jewelry, Bags, Shoes..." required>
                     </div>
                     <button type="submit" class="submit-btn secondary-btn">Add Category</button>
                 </form>
             </div>
 
             <div class="admin-card">
-                <h2><i class="fa-solid fa-box-open"></i> Add New Product</h2>
-                <form id="product-form" onsubmit="addNewProduct(event)">
+                <h2 id="product-form-heading"><i class="fa-solid fa-box-open"></i> Add New Product</h2>
+                <form id="product-form" onsubmit="handleProductSubmit(event)">
+                    <input type="hidden" id="edit-product-id" value="">
+
                     <div class="form-group">
                         <label>Product Title:</label>
                         <input type="text" id="p-title" placeholder="Product name..." required>
@@ -85,8 +100,9 @@
                         <label for="p-sale">Mark this product <strong>ON SALE</strong></label>
                     </div>
                     <div class="form-group">
-                        <label>Select Images from PC (1 to 5 images):</label>
+                        <label id="p-image-label">Select Images from PC (1 to 5 images):</label>
                         <input type="file" id="p-image-files" accept="image/*" multiple required>
+                        <small id="p-image-help" class="form-help-text hidden">Leave empty to keep existing product images, or choose 1-5 images to replace them.</small>
                     </div>
                     <div class="form-group">
                         <label>Product Description:</label>
@@ -96,7 +112,11 @@
                         <label>AliExpress Affiliate Link:</label>
                         <input type="url" id="p-link" placeholder="https://s.click.aliexpress.com/e/..." required>
                     </div>
-                    <button type="submit" class="submit-btn">Publish Product</button>
+
+                    <div class="admin-form-actions">
+                        <button type="submit" id="product-submit-btn" class="submit-btn">Publish Product</button>
+                        <button type="button" id="cancel-edit-btn" class="cancel-edit-btn hidden" onclick="cancelEditProduct()">Cancel Edit</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -111,10 +131,50 @@
         </div>
     </main>
 
-    <!-- Simple Footer -->
+    <!-- Store Info Modal (For Footer Pages) -->
+    <div id="store-info-modal" class="info-modal hidden" onclick="closeInfoModal(event)">
+        <div class="info-modal-card" onclick="event.stopPropagation()">
+            <button type="button" class="info-modal-close" onclick="closeInfoModal()" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 id="info-modal-title">Store Information</h3>
+            <div id="info-modal-body" class="info-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Storefront Footer -->
     <footer class="site-footer">
         <div class="footer-container">
-            <p>&copy; 2026 Shanza's Global Finds. All rights reserved.</p>
+            <div class="footer-top-grid">
+                <div class="footer-brand-col">
+                    <div class="footer-brand-name">SHANZA<span>.</span></div>
+                    <p class="footer-brand-desc">Curated daily finds across fashion, beauty, accessories, and smart lifestyle essentials.</p>
+                </div>
+
+                <div class="footer-links-col">
+                    <h4>Store Pages</h4>
+                    <ul>
+                        <li><a href="#store-top" onclick="goHome(); return false;">Home</a></li>
+                        <li><a href="#collections-section" onclick="scrollToSection('collections-section'); return false;">Collections</a></li>
+                        <li><a href="#products-section" onclick="scrollToSection('products-section'); return false;">Featured Products</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links-col">
+                    <h4>Information</h4>
+                    <ul>
+                        <li><a href="#" onclick="openInfoModal('about'); return false;">About Us</a></li>
+                        <li><a href="#" onclick="openInfoModal('disclosure'); return false;">Affiliate Disclosure</a></li>
+                        <li><a href="#" onclick="openInfoModal('shopping'); return false;">Shopping Guide</a></li>
+                        <li><a href="#" onclick="openInfoModal('privacy'); return false;">Privacy & Terms</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom-bar">
+                <p>&copy; 2026 Shanza's Global Finds. All rights reserved.</p>
+                <p class="footer-note">Curated affiliate storefront — external orders are fulfilled via official partner stores.</p>
+            </div>
         </div>
     </footer>
 
